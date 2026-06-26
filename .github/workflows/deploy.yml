@@ -1,4 +1,4 @@
-name: Deploy Platform
+name: Deploy Platform - ${{ github.event.inputs.environment }}
 
 on:
   workflow_dispatch:
