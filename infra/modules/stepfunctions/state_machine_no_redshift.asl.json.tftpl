@@ -1,0 +1,42 @@
+{
+  "Comment": "Medallion ETL pipeline without Redshift load",
+  "StartAt": "BronzeIngest",
+  "States": {
+    "BronzeIngest": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${bronze_job_name}",
+        "Arguments": {
+          "--input_key.$": "$.input_key",
+          "--run_date.$": "$.run_date"
+        }
+      },
+      "Next": "SilverTransform"
+    },
+    "SilverTransform": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${silver_job_name}",
+        "Arguments": {
+          "--input_key.$": "$.input_key",
+          "--run_date.$": "$.run_date"
+        }
+      },
+      "Next": "GoldModel"
+    },
+    "GoldModel": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${gold_job_name}",
+        "Arguments": {
+          "--input_key.$": "$.input_key",
+          "--run_date.$": "$.run_date"
+        }
+      },
+      "End": true
+    }
+  }
+}
