@@ -1,0 +1,19 @@
+CREATE SCHEMA IF NOT EXISTS bi_mart;
+
+CREATE TABLE IF NOT EXISTS bi_mart.sales_enriched (
+  sale_date date,
+  year integer,
+  quarter integer,
+  month integer,
+  product_id varchar(64),
+  product varchar(512),
+  category varchar(256),
+  segment varchar(256),
+  manufacturer_id varchar(64),
+  manufacturer varchar(256),
+  zip varchar(32),
+  revenue double precision,
+  units integer,
+  revenue_per_unit double precision,
+  load_date date
+);

@@ -1,0 +1,68 @@
+name: Deploy Platform
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        required: true
+        type: choice
+        options: [dev, uat, prod]
+      apply:
+        description: Apply changes?
+        required: true
+        type: choice
+        options: ["false", "true"]
+        default: "false"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: Select role ARN
+        id: role
+        shell: bash
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            dev)  echo "arn=${{ secrets.AWS_ROLE_ARN_DEV }}"  >> "$GITHUB_OUTPUT" ;;
+            uat)  echo "arn=${{ secrets.AWS_ROLE_ARN_UAT }}"  >> "$GITHUB_OUTPUT" ;;
+            prod) echo "arn=${{ secrets.AWS_ROLE_ARN_PROD }}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "Unsupported environment" && exit 1 ;;
+          esac
+
+      - name: Configure AWS credentials by OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ steps.role.outputs.arn }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform init
+        working-directory: infra
+        run: terraform init -backend-config=environments/${{ github.event.inputs.environment }}/backend.hcl
+
+      - name: Terraform validate
+        working-directory: infra
+        run: terraform validate
+
+      - name: Terraform plan
+        working-directory: infra
+        run: terraform plan -var-file=environments/${{ github.event.inputs.environment }}/terraform.tfvars -out=tfplan
+
+      - name: Terraform apply
+        if: ${{ github.event.inputs.apply == 'true' }}
+        working-directory: infra
+        run: terraform apply -auto-approve tfplan

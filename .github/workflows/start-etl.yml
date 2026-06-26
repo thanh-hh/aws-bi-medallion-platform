@@ -1,0 +1,57 @@
+name: Start ETL
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment
+        required: true
+        type: choice
+        options: [dev, uat, prod]
+      input_key:
+        description: Object key in bronze bucket, e.g. incoming/Data.xlsx
+        required: true
+        default: incoming/Data.xlsx
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  start-etl:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Select role ARN
+        id: role
+        shell: bash
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            dev)  echo "arn=${{ secrets.AWS_ROLE_ARN_DEV }}"  >> "$GITHUB_OUTPUT" ;;
+            uat)  echo "arn=${{ secrets.AWS_ROLE_ARN_UAT }}"  >> "$GITHUB_OUTPUT" ;;
+            prod) echo "arn=${{ secrets.AWS_ROLE_ARN_PROD }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Configure AWS credentials by OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ steps.role.outputs.arn }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Start Step Functions execution
+        shell: bash
+        run: |
+          ENV_NAME="${{ github.event.inputs.environment }}"
+          ARN=$(aws ssm get-parameter \
+            --name "/aws-bi-medallion/${ENV_NAME}/stepfunctions/pipeline_arn" \
+            --query 'Parameter.Value' \
+            --output text)
+
+          EXECUTION_NAME="manual-${ENV_NAME}-$(date +%Y%m%d%H%M%S)"
+          aws stepfunctions start-execution \
+            --state-machine-arn "$ARN" \
+            --name "$EXECUTION_NAME" \
+            --input "{\"input_key\":\"${{ github.event.inputs.input_key }}\"}"

@@ -1,0 +1,6 @@
+TRUNCATE TABLE bi_mart.sales_enriched;
+
+COPY bi_mart.sales_enriched
+FROM 's3://${gold_bucket_name}/marts/sales_enriched/current/'
+IAM_ROLE '${redshift_role_arn}'
+FORMAT AS PARQUET;

@@ -1,0 +1,152 @@
+{
+  "Comment": "Medallion ETL pipeline: Bronze -> Silver -> Gold -> Redshift",
+  "StartAt": "PrepareRunContext",
+  "States": {
+    "PrepareRunContext": {
+      "Type": "Pass",
+      "Parameters": {
+        "run_date.$": "States.ArrayGetItem(States.StringSplit($$.Execution.StartTime, 'T'), 0)",
+        "input_key.$": "$.input_key"
+      },
+      "ResultPath": "$.context",
+      "Next": "BronzeIngest"
+    },
+    "BronzeIngest": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${bronze_job_name}",
+        "Arguments": {
+          "--RUN_DATE.$": "$.context.run_date",
+          "--INPUT_KEY.$": "$.context.input_key"
+        }
+      },
+      "ResultPath": "$.bronze",
+      "Retry": [
+        {
+          "ErrorEquals": ["Glue.AWSGlueException", "States.TaskFailed"],
+          "IntervalSeconds": 30,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "SilverTransform"
+    },
+    "SilverTransform": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${silver_job_name}",
+        "Arguments": {
+          "--RUN_DATE.$": "$.context.run_date"
+        }
+      },
+      "ResultPath": "$.silver",
+      "Retry": [
+        {
+          "ErrorEquals": ["Glue.AWSGlueException", "States.TaskFailed"],
+          "IntervalSeconds": 30,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "GoldModel"
+    },
+    "GoldModel": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${gold_job_name}",
+        "Arguments": {
+          "--RUN_DATE.$": "$.context.run_date"
+        }
+      },
+      "ResultPath": "$.gold",
+      "Retry": [
+        {
+          "ErrorEquals": ["Glue.AWSGlueException", "States.TaskFailed"],
+          "IntervalSeconds": 30,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Next": "EnsureRedshiftSchema"
+    },
+    "EnsureRedshiftSchema": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:redshiftdata:executeStatement",
+      "Parameters": {
+        "WorkgroupName": "${redshift_workgroup_name}",
+        "Database": "${redshift_database_name}",
+        "Sql": ${create_sql_json}
+      },
+      "ResultPath": "$.redshiftCreate",
+      "Next": "WaitCreateStatement"
+    },
+    "WaitCreateStatement": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "DescribeCreateStatement"
+    },
+    "DescribeCreateStatement": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:redshiftdata:describeStatement",
+      "Parameters": {
+        "Id.$": "$.redshiftCreate.Id"
+      },
+      "ResultPath": "$.redshiftCreateStatus",
+      "Next": "CreateStatementFinished?"
+    },
+    "CreateStatementFinished?": {
+      "Type": "Choice",
+      "Choices": [
+        { "Variable": "$.redshiftCreateStatus.Status", "StringEquals": "FINISHED", "Next": "LoadRedshiftMart" },
+        { "Variable": "$.redshiftCreateStatus.Status", "StringEquals": "FAILED", "Next": "RedshiftFailed" },
+        { "Variable": "$.redshiftCreateStatus.Status", "StringEquals": "ABORTED", "Next": "RedshiftFailed" }
+      ],
+      "Default": "WaitCreateStatement"
+    },
+    "LoadRedshiftMart": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:redshiftdata:executeStatement",
+      "Parameters": {
+        "WorkgroupName": "${redshift_workgroup_name}",
+        "Database": "${redshift_database_name}",
+        "Sql": ${load_sql_json}
+      },
+      "ResultPath": "$.redshiftLoad",
+      "Next": "WaitLoadStatement"
+    },
+    "WaitLoadStatement": {
+      "Type": "Wait",
+      "Seconds": 10,
+      "Next": "DescribeLoadStatement"
+    },
+    "DescribeLoadStatement": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:redshiftdata:describeStatement",
+      "Parameters": {
+        "Id.$": "$.redshiftLoad.Id"
+      },
+      "ResultPath": "$.redshiftLoadStatus",
+      "Next": "LoadStatementFinished?"
+    },
+    "LoadStatementFinished?": {
+      "Type": "Choice",
+      "Choices": [
+        { "Variable": "$.redshiftLoadStatus.Status", "StringEquals": "FINISHED", "Next": "Success" },
+        { "Variable": "$.redshiftLoadStatus.Status", "StringEquals": "FAILED", "Next": "RedshiftFailed" },
+        { "Variable": "$.redshiftLoadStatus.Status", "StringEquals": "ABORTED", "Next": "RedshiftFailed" }
+      ],
+      "Default": "WaitLoadStatement"
+    },
+    "RedshiftFailed": {
+      "Type": "Fail",
+      "Error": "RedshiftStatementFailed",
+      "Cause": "Redshift Data API statement failed or was aborted."
+    },
+    "Success": {
+      "Type": "Succeed"
+    }
+  }
+}

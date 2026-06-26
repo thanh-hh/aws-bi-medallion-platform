@@ -1,0 +1,9 @@
+variable "name_prefix" { type = string }
+variable "environment" { type = string }
+variable "subnet_ids" { type = list(string) }
+variable "security_group_ids" { type = list(string) }
+variable "kms_key_arn" { type = string }
+variable "gold_bucket_arn" { type = string }
+variable "silver_bucket_arn" { type = string }
+variable "base_capacity" { type = number }
+variable "monthly_rpu_hours_limit" { type = number }

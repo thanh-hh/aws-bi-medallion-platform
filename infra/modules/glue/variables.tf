@@ -1,0 +1,11 @@
+variable "name_prefix" { type = string }
+variable "environment" { type = string }
+variable "bronze_bucket_name" { type = string }
+variable "silver_bucket_name" { type = string }
+variable "gold_bucket_name" { type = string }
+variable "artifacts_bucket_name" { type = string }
+variable "bronze_bucket_arn" { type = string }
+variable "silver_bucket_arn" { type = string }
+variable "gold_bucket_arn" { type = string }
+variable "artifacts_bucket_arn" { type = string }
+variable "kms_key_arn" { type = string }
