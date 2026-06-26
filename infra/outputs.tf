@@ -11,11 +11,11 @@ output "gold_bucket_name" {
 }
 
 output "redshift_workgroup_name" {
-  value = module.redshift.workgroup_name
+  value = var.enable_redshift ? module.redshift[0].workgroup_name : null
 }
 
 output "redshift_database_name" {
-  value = module.redshift.database_name
+  value = var.enable_redshift ? module.redshift[0].database_name : null
 }
 
 output "state_machine_arn" {
