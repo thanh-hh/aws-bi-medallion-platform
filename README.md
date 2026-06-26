@@ -115,6 +115,8 @@ Manual ETL run:
 Actions -> Run Pipeline -> choose environment + input_key -> Run workflow
 ```
 
+If you use the GitHub workflow, you can optionally set `run_date` to the desired ETL date; otherwise it defaults to today.
+
 ## Idempotency design
 
 The platform is idempotent at multiple levels:

@@ -12,6 +12,10 @@ on:
         description: Object key in bronze bucket, e.g. incoming/Data.xlsx
         required: true
         default: incoming/Data.xlsx
+      run_date:
+        description: ETL run date, e.g. 2026-06-26
+        required: false
+        default: ""
 
 permissions:
   id-token: write
@@ -46,6 +50,12 @@ jobs:
         shell: bash
         run: |
           ENV_NAME="${{ github.event.inputs.environment }}"
+          INPUT_KEY="${{ github.event.inputs.input_key }}"
+          RUN_DATE="${{ github.event.inputs.run_date }}"
+          if [ -z "$RUN_DATE" ]; then
+            RUN_DATE=$(date +%Y-%m-%d)
+          fi
+
           ARN=$(aws ssm get-parameter \
             --name "/bi-platform/aws-bi-medallion/${ENV_NAME}/stepfunctions/pipeline_arn" \
             --query 'Parameter.Value' \
@@ -62,4 +72,4 @@ jobs:
           aws stepfunctions start-execution \
             --state-machine-arn "$ARN" \
             --name "$EXECUTION_NAME" \
-            --input "{\"input_key\":\"${{ github.event.inputs.input_key }}\"}"
+            --input "{\"input_key\":\"${INPUT_KEY}\",\"run_date\":\"${RUN_DATE}\"}"
