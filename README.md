@@ -106,13 +106,13 @@ AWS_REGION
 Manual deployment:
 
 ```text
-Actions -> Deploy Platform -> choose environment -> Run workflow
+Actions -> Deploy Infra -> choose environment -> Run workflow
 ```
 
 Manual ETL run:
 
 ```text
-Actions -> Start ETL -> choose environment + input_key -> Run workflow
+Actions -> Run Pipeline -> choose environment + input_key -> Run workflow
 ```
 
 ## Idempotency design

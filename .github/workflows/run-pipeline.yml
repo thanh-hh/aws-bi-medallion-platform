@@ -1,4 +1,4 @@
-name: Start ETL
+name: Run Pipeline
 
 on:
   workflow_dispatch:
@@ -21,7 +21,8 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
-  start-etl:
+  run-pipeline:
+    name: Run Pipeline - ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
