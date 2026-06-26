@@ -9,7 +9,15 @@ ARN=$(aws ssm get-parameter \
   --name "/bi-platform/aws-bi-medallion/${ENV_NAME}/stepfunctions/pipeline_arn" \
   --region "$REGION" \
   --query 'Parameter.Value' \
-  --output text)
+  --output text 2>/dev/null || true)
+
+if [ -z "$ARN" ]; then
+  ARN=$(aws ssm get-parameter \
+    --name "/aws-bi-medallion/${ENV_NAME}/stepfunctions/pipeline_arn" \
+    --region "$REGION" \
+    --query 'Parameter.Value' \
+    --output text)
+fi
 
 EXECUTION_NAME="manual-${ENV_NAME}-$(date +%Y%m%d%H%M%S)"
 aws stepfunctions start-execution \

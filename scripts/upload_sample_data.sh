@@ -10,7 +10,15 @@ BUCKET=$(aws ssm get-parameter \
   --name "/bi-platform/aws-bi-medallion/${ENV_NAME}/buckets/bronze" \
   --region "$REGION" \
   --query 'Parameter.Value' \
-  --output text)
+  --output text 2>/dev/null || true)
+
+if [ -z "$BUCKET" ]; then
+  BUCKET=$(aws ssm get-parameter \
+    --name "/aws-bi-medallion/${ENV_NAME}/buckets/bronze" \
+    --region "$REGION" \
+    --query 'Parameter.Value' \
+    --output text)
+fi
 
 aws s3 cp "$FILE_PATH" "s3://${BUCKET}/${KEY}" --region "$REGION"
 echo "Uploaded to s3://${BUCKET}/${KEY}"
