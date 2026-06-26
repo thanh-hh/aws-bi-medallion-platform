@@ -16,6 +16,7 @@ module "storage" {
 }
 
 module "redshift" {
+  count                     = var.enable_redshift ? 1 : 0
   source                    = "./modules/redshift"
   name_prefix               = local.name_prefix
   environment               = var.environment
@@ -48,13 +49,15 @@ module "stepfunctions" {
   name_prefix             = local.name_prefix
   environment             = var.environment
   glue_job_names          = module.glue.job_names
-  redshift_workgroup_name = module.redshift.workgroup_name
-  redshift_database_name  = module.redshift.database_name
-  redshift_role_arn       = module.redshift.copy_role_arn
+  enable_redshift         = var.enable_redshift
+  redshift_workgroup_name = var.enable_redshift ? module.redshift[0].workgroup_name : null
+  redshift_database_name  = var.enable_redshift ? module.redshift[0].database_name : null
+  redshift_role_arn       = var.enable_redshift ? module.redshift[0].copy_role_arn : null
   gold_bucket_name        = module.storage.gold_bucket_name
   enable_schedule         = var.enable_schedule
   schedule_expression     = var.schedule_expression
   schedule_timezone       = var.schedule_timezone
+  
 }
 
 module "observability" {

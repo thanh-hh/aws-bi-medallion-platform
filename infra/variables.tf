@@ -90,3 +90,10 @@ variable "parameter_prefix" {
   type        = string
   default     = "/bi-platform/aws-bi-medallion"
 }
+
+
+variable "enable_redshift" {
+  description = "If true, create Redshift Serverless and load the gold mart into Redshift. Set false to run S3/Glue/Step Functions only."
+  type        = bool
+  default     = false
+}
