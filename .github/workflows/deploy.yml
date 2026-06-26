@@ -1,4 +1,4 @@
-name: Deploy Platform - ${{ github.event.inputs.environment }}
+name: Deploy Platform
 
 on:
   workflow_dispatch:
@@ -24,6 +24,7 @@ env:
 
 jobs:
   terraform:
+    name: Deploy Platform - ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
