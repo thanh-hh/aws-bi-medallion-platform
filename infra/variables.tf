@@ -84,3 +84,9 @@ variable "extra_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "parameter_prefix" {
+  description = "SSM Parameter Store prefix. Must not start with /aws or /ssm because those prefixes are reserved by AWS."
+  type        = string
+  default     = "/bi-platform/aws-bi-medallion"
+}

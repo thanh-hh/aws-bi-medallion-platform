@@ -65,25 +65,25 @@ module "observability" {
 }
 
 resource "aws_ssm_parameter" "bronze_bucket" {
-  name  = "/aws-bi-medallion/${var.environment}/buckets/bronze"
+  name = "${var.parameter_prefix}/${var.environment}/buckets/bronze"
   type  = "String"
   value = module.storage.bronze_bucket_name
 }
 
 resource "aws_ssm_parameter" "silver_bucket" {
-  name  = "/aws-bi-medallion/${var.environment}/buckets/silver"
+  name = "${var.parameter_prefix}/${var.environment}/buckets/silver"
   type  = "String"
   value = module.storage.silver_bucket_name
 }
 
 resource "aws_ssm_parameter" "gold_bucket" {
-  name  = "/aws-bi-medallion/${var.environment}/buckets/gold"
+  name = "${var.parameter_prefix}/${var.environment}/buckets/gold"
   type  = "String"
   value = module.storage.gold_bucket_name
 }
 
 resource "aws_ssm_parameter" "pipeline_arn" {
-  name  = "/aws-bi-medallion/${var.environment}/stepfunctions/pipeline_arn"
+  name  = "${var.parameter_prefix}/${var.environment}/stepfunctions/pipeline_arn"
   type  = "String"
   value = module.stepfunctions.state_machine_arn
 }

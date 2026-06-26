@@ -2,6 +2,9 @@ project_name = "aws-bi-medallion"
 environment  = "dev"
 aws_region   = "us-east-1"
 
+parameter_prefix = "/bi-platform/aws-bi-medallion"
+enable_redshift = false
+
 create_buckets = true
 
 enable_schedule = false
