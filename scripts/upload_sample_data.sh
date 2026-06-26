@@ -7,7 +7,7 @@ FILE_PATH="${3:-sample_data/Data.xlsx}"
 KEY="${4:-incoming/Data.xlsx}"
 
 BUCKET=$(aws ssm get-parameter \
-  --name "/aws-bi-medallion/${ENV_NAME}/buckets/bronze" \
+  --name "/bi-platform/aws-bi-medallion/${ENV_NAME}/buckets/bronze" \
   --region "$REGION" \
   --query 'Parameter.Value' \
   --output text)

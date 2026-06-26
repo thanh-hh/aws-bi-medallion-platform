@@ -6,7 +6,7 @@ REGION="${2:-us-east-1}"
 INPUT_KEY="${3:-incoming/Data.xlsx}"
 
 ARN=$(aws ssm get-parameter \
-  --name "/aws-bi-medallion/${ENV_NAME}/stepfunctions/pipeline_arn" \
+  --name "/bi-platform/aws-bi-medallion/${ENV_NAME}/stepfunctions/pipeline_arn" \
   --region "$REGION" \
   --query 'Parameter.Value' \
   --output text)

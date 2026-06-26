@@ -47,7 +47,7 @@ jobs:
         run: |
           ENV_NAME="${{ github.event.inputs.environment }}"
           ARN=$(aws ssm get-parameter \
-            --name "/aws-bi-medallion/${ENV_NAME}/stepfunctions/pipeline_arn" \
+            --name "/bi-platform/aws-bi-medallion/${ENV_NAME}/stepfunctions/pipeline_arn" \
             --query 'Parameter.Value' \
             --output text)
 
